@@ -578,6 +578,150 @@ describe('features/space-tool', function() {
   });
 
 
+  describe('attachers', function() {
+
+    beforeEach(bootstrapDiagram({
+      modules: [
+        modelingModule,
+        rulesModule,
+        spaceToolModule
+      ]
+    }));
+
+    beforeEach(inject(function(dragging) {
+      dragging.setOptions({ manual: true });
+    }));
+
+    var child,
+        childAttacher,
+        childAttacherLabel,
+        parent,
+        parentAttacher;
+
+    beforeEach(inject(function(canvas, elementFactory, modeling) {
+      parent = elementFactory.createShape({
+        id: 'parent-resizable',
+        x: 100, y: 100,
+        width: 300, height: 200
+      });
+
+      canvas.addShape(parent);
+
+      child = elementFactory.createShape({
+        id: 'child',
+        x: 150, y: 150,
+        width: 200, height: 100
+      });
+
+      canvas.addShape(child, parent);
+
+      parentAttacher = elementFactory.createShape({
+        id: 'parentAttacher',
+        x: 325,
+        y: 275,
+        width: 50, height: 50,
+        host: parent
+      });
+
+      canvas.addShape(parentAttacher);
+
+      childAttacher = elementFactory.createShape({
+        id: 'childAttacher',
+        x: 325,
+        y: 175,
+        width: 50, height: 50,
+        host: child
+      });
+
+      canvas.addShape(childAttacher);
+
+      childAttacherLabel = elementFactory.createLabel({
+        id: 'childLabel',
+        width: 80, height: 40
+      });
+
+      modeling.createLabel(childAttacher, { x: 350, y: 250 }, childAttacherLabel);
+    }));
+
+
+    it('should move attacher of moving host', inject(function(dragging, spaceTool) {
+
+      // when
+      spaceTool.activateMakeSpace(canvasEvent({ x: 360, y: 0 }));
+
+      dragging.move(canvasEvent({ x: 260, y: 0 }, keyModifier));
+
+      dragging.end();
+
+      // then
+      expect(childAttacher).to.have.bounds({
+        x: 225,
+        y: 175,
+        width: 50,
+        height: 50
+      });
+    }));
+
+
+    it('should move external label of moving attacher', inject(function(dragging, spaceTool) {
+
+      // when
+      spaceTool.activateMakeSpace(canvasEvent({ x: 360, y: 0 }));
+
+      dragging.move(canvasEvent({ x: 260, y: 0 }, keyModifier));
+
+      dragging.end();
+
+      // then
+      expect(childAttacherLabel).to.have.bounds({
+        x: 210,
+        y: 230,
+        width: 80,
+        height: 40
+      });
+    }));
+
+
+    it('should move attacher of resizing host', inject(function(dragging, spaceTool) {
+
+      // when
+      spaceTool.activateMakeSpace(canvasEvent({ x: 250, y: 0 }));
+
+      dragging.move(canvasEvent({ x: 350, y: 0 }));
+
+      dragging.end();
+
+      // then
+      expect(parentAttacher).to.have.bounds({
+        x: 425,
+        y: 275,
+        width: 50,
+        height: 50
+      });
+    }));
+
+
+    it('should not move attacher', inject(function(dragging, spaceTool) {
+
+      // when
+      spaceTool.activateMakeSpace(canvasEvent({ x: 250, y: 0 }));
+
+      dragging.move(canvasEvent({ x: 350, y: 0 }));
+
+      dragging.end();
+
+      // then
+      expect(childAttacher).to.have.bounds({
+        x: 325,
+        y: 175,
+        width: 50,
+        height: 50
+      });
+    }));
+
+  });
+
+
   describe('resize containers', function() {
 
     beforeEach(bootstrapDiagram({
