@@ -56,6 +56,158 @@ describe('features/space-tool', function() {
   });
 
 
+  describe('#calculateAdjustments', function(spaceTool) {
+
+    beforeEach(bootstrapDiagram({
+      modules: [
+        modelingModule,
+        rulesModule,
+        spaceToolModule
+      ]
+    }));
+
+    beforeEach(inject(function(dragging) {
+      dragging.setOptions({ manual: true });
+    }));
+
+    var childAttacher,
+        childAttacherLabel,
+        childShape,
+        childShape2,
+        childShape2Label,
+        connection,
+        grandParent,
+        greatGrandParent,
+        parentAttacher,
+        parentShape;
+
+    beforeEach(inject(function(canvas, elementFactory, modeling) {
+      greatGrandParent = elementFactory.createShape({
+        id: 'greatGrandParent-resizable',
+        x: 100, y: 50,
+        width: 400, height: 400
+      });
+
+      canvas.addShape(greatGrandParent);
+
+      grandParent = elementFactory.createShape({
+        id: 'grandParent-resizable',
+        x: 125, y: 75,
+        width: 350, height: 350
+      });
+
+      canvas.addShape(grandParent, greatGrandParent);
+
+      parentShape = elementFactory.createShape({
+        id: 'parent1-resizable',
+        x: 200, y: 150,
+        width: 200, height: 200
+      });
+
+      canvas.addShape(parentShape, grandParent);
+
+      childShape = elementFactory.createShape({
+        id: 'child',
+        x: 225, y: 175,
+        width: 50, height: 50
+      });
+
+      canvas.addShape(childShape, parentShape);
+
+      childShape2 = elementFactory.createShape({
+        id: 'child2',
+        x: 325, y: 275,
+        width: 50, height: 50
+      });
+
+      canvas.addShape(childShape2, parentShape);
+
+      childShape2Label = elementFactory.createLabel({
+        id: 'childShape2Label',
+        width: 80, height: 40
+      });
+
+      modeling.createLabel(childShape2, { x: 350, y: 350 }, childShape2Label);
+
+      connection = elementFactory.createConnection({
+        id: 'connection',
+        waypoints: [
+          { x: 250, y: 200 },
+          { x: 350, y: 300 }
+        ],
+        source: childShape,
+        target: childShape2
+      });
+
+      canvas.addConnection(connection);
+
+      childAttacher = elementFactory.createShape({
+        id: 'childAttacher',
+        x: 200,
+        y: 200,
+        width: 50, height: 50,
+        host: childShape
+      });
+
+      canvas.addShape(childAttacher);
+
+      childAttacherLabel = elementFactory.createLabel({
+        id: 'childLabel',
+        width: 80, height: 40
+      });
+
+      modeling.createLabel(childAttacher, { x: 225, y: 275 }, childAttacherLabel);
+
+      parentAttacher = elementFactory.createShape({
+        id: 'parentAttacher',
+        x: 375,
+        y: 125,
+        width: 50, height: 50,
+        host: parentShape
+      });
+
+      canvas.addShape(parentAttacher);
+    }));
+
+
+    it('should not contain moving shapes and resizing shapes', inject(function(elementRegistry, spaceTool) {
+
+      // given
+      var elements = elementRegistry.filter(function(element) {
+        return element.id !== '__implicitroot' && !element.waypoints;
+      });
+
+      var resizableElements = elements.filter(function(element) {
+        return element.id.includes('resizable');
+      });
+
+      // when
+      var adjustments = spaceTool.calculateAdjustments(elementRegistry.getAll(), 'x', 100, 220);
+
+      // then
+      expect(adjustments.movingShapes).to.have.length(elements.length - resizableElements.length);
+      expect(adjustments.resizingShapes).to.have.length(resizableElements.length);
+    }));
+
+
+    it('should not contain duplicates (moving shapes)', inject(function(elementRegistry, spaceTool) {
+
+      // given
+      var elements = elementRegistry.filter(function(element) {
+        return element.id !== '__implicitroot' && !element.waypoints;
+      });
+
+      // when
+      var adjustments = spaceTool.calculateAdjustments(elementRegistry.getAll(), 'x', 100, 0);
+
+      // then
+      expect(adjustments.movingShapes).to.have.length(elements.length);
+      expect(adjustments.resizingShapes).to.have.length(0);
+    }));
+
+  });
+
+
   describe('create/remove space', function() {
 
     beforeEach(bootstrapDiagram({
